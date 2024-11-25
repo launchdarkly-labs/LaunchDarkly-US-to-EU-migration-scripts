@@ -1,4 +1,4 @@
-import yargs from "https://cdn.deno.land/yargs/versions/yargs-v16.2.1-deno/raw/deno.ts";
+import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import {
   ensureDir,
   ensureDirSync,
