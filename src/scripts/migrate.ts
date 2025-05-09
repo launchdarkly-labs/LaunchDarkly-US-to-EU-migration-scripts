@@ -25,7 +25,7 @@ interface Arguments {
   projKeyDest: string;
   apikey: string;
   domain: string;
-  maintainerId: string;
+// Removed the unused maintainerId property
 }
 
 let inputArgs: Arguments = yargs(Deno.args)
