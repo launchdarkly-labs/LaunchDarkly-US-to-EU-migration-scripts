@@ -25,6 +25,7 @@ interface Arguments {
   projKeyDest: string;
   apikey: string;
   domain: string;
+  maintainerId: string;
 }
 
 let inputArgs: Arguments = yargs(Deno.args)
@@ -32,7 +33,10 @@ let inputArgs: Arguments = yargs(Deno.args)
   .alias("d", "projKeyDest")
   .alias("k", "apikey")
   .alias("u", "domain")
-  .default("u", "app.launchdarkly.com").argv;
+  .alias("m", "maintainerId")
+  .default("u", "app.launchdarkly.com")
+  .demandOption(["p", "d", "k"])
+  .argv;
 
 // Project Data //
 const projectJson = await getJson(
@@ -88,7 +92,7 @@ for (const env of projRep.environments.items) {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
-  
+
   // We are ignoring big segments/synced segments for now
   for (const segment of segmentData.items) {
     if (segment.unbounded == true) {
@@ -186,6 +190,12 @@ for (const [index, flagkey] of flagList.entries()) {
     description: flag.description
   };
 
+  // Preserve the original maintainerId if it exists
+  if (flag.maintainerId) {
+    newFlag.maintainerId = flag.maintainerId;
+    console.log(`\tPreserving maintainer: ${flag.maintainerId} for flag: ${flag.key}`);
+  }
+
   if (flag.clientSideAvailability) {
     newFlag.clientSideAvailability = flag.clientSideAvailability;
   } else if (flag.includeInSnippet) {
@@ -209,6 +219,7 @@ for (const [index, flagkey] of flagList.entries()) {
       `flags/${inputArgs.projKeyDest}`,
       newFlag,
     ),
+    'flags'
   );
   if (flagResp.status == 200 || flagResp.status == 201) {
     console.log("\tFlag created");
@@ -235,12 +246,12 @@ for (const [index, flagkey] of flagList.entries()) {
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
-    
+
 
     Object.keys(parsedData)
       .map((key) => {
         if (key == "rules") {
-          patchReq.push(...buildRules(parsedData[key], "environments/" + env));  
+          patchReq.push(...buildRules(parsedData[key], "environments/" + env));
         } else {
           patchReq.push(
             buildPatch(
@@ -249,12 +260,12 @@ for (const [index, flagkey] of flagList.entries()) {
               parsedData[key],
             ),
           );
-          
+
         }
       });
-      await makePatchCall(flag.key, patchReq, env);
-      
-      console.log(`\tFinished patching flag ${flagkey} for env ${env}`);
+    await makePatchCall(flag.key, patchReq, env);
+
+    console.log(`\tFinished patching flag ${flagkey} for env ${env}`);
   }
 
 }
@@ -270,7 +281,7 @@ projectJson.environments.items.forEach((env: any) => {
 //const envList: string[] = ["test"];
 
 
-async function makePatchCall(flagKey, patchReq, env){
+async function makePatchCall(flagKey, patchReq, env) {
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -280,7 +291,7 @@ async function makePatchCall(flagKey, patchReq, env){
     ),
   );
   const flagPatchStatus = await patchFlagReq.status;
-  if (flagPatchStatus > 200){
+  if (flagPatchStatus > 200) {
     flagsDoubleCheck.push(flagKey)
     consoleLogger(
       flagPatchStatus,
@@ -291,7 +302,7 @@ async function makePatchCall(flagKey, patchReq, env){
   if (flagPatchStatus == 400) {
     console.log(patchFlagReq)
   }
-  
+
   consoleLogger(
     flagPatchStatus,
     `\tPatching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
@@ -300,7 +311,7 @@ async function makePatchCall(flagKey, patchReq, env){
   return flagsDoubleCheck;
 }
 
-if(flagsDoubleCheck.length > 0) {
+if (flagsDoubleCheck.length > 0) {
   console.log("There are a few flags to double check as they have had an error or warning on the patch")
   flagsDoubleCheck.forEach((flag) => {
     console.log(` - ${flag}`)

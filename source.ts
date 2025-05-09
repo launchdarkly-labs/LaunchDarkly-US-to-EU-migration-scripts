@@ -1,8 +1,8 @@
-import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
+import yargs from "yargs";
 import {
   ensureDir,
   ensureDirSync,
-} from "https://deno.land/std@0.149.0/fs/mod.ts";
+} from "std/fs/mod.ts";
 import { consoleLogger, delay, ldAPIRequest, writeSourceData } from "./utils.ts";
 
 interface Arguments {
