@@ -1,9 +1,9 @@
-import yargs from "yargs";
+import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import {
   ensureDir,
   ensureDirSync,
-} from "std/fs/mod.ts";
-import { consoleLogger, delay, ldAPIRequest, writeSourceData } from "./utils.ts";
+} from "https://deno.land/std@0.149.0/fs/mod.ts";
+import { consoleLogger, delay, ldAPIRequest, writeSourceData } from "../utils/utils.ts";
 
 interface Arguments {
   projKey: string;
@@ -18,7 +18,7 @@ let inputArgs: Arguments = yargs(Deno.args)
   .default("u", "app.launchdarkly.com").argv;
 
 // ensure output directory exists
-const projPath = `./source/project/${inputArgs.projKey}`;
+const projPath = `./data/source/project/${inputArgs.projKey}`;
 ensureDirSync(projPath);
 
 // Project Data //
@@ -40,7 +40,7 @@ await writeSourceData(projPath, "project", projData);
 // Segment Data //
 
 if (projData.environments.items.length > 0) {
-  
+
   console.log(`Found ${projData.environments.items.length} environments`);
 
   projData.environments.items.forEach(async (env: any) => {
@@ -67,10 +67,10 @@ if (projData.environments.items.length > 0) {
 }
 
 // Get List of all Flags
-const pageSize : number = 5;
+const pageSize: number = 5;
 let offset: number = 0;
-let moreFlags : boolean = true;
-const flags : string[] = [];
+let moreFlags: boolean = true;
+const flags: string[] = [];
 let path = `flags/${inputArgs.projKey}?summary=true&limit=${pageSize}&offset=${offset}`;
 
 while (moreFlags) {
@@ -96,7 +96,7 @@ while (moreFlags) {
 
   const flagsData = await flagsResp.json();
 
-  flags.push( ...flagsData.items.map((flag: any) => flag.key) );
+  flags.push(...flagsData.items.map((flag: any) => flag.key));
 
   if (flagsData._links.next) {
     offset += pageSize;

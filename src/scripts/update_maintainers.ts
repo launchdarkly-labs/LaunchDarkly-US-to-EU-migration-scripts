@@ -1,6 +1,6 @@
-import yargs from "yargs";
-import { ensureDirSync } from "std/fs/mod.ts";
-import { consoleLogger } from "./utils.ts";
+import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
+import { ensureDirSync } from "https://deno.land/std@0.149.0/fs/mod.ts";
+import { consoleLogger } from "../utils/utils.ts";
 
 interface Arguments {
   projKey: string;
@@ -27,7 +27,7 @@ const mappingContent = await Deno.readTextFile(inputArgs.mappingFile);
 const maintainerMapping: MaintainerMapping = JSON.parse(mappingContent);
 
 // Read the flags from the source directory
-const projPath = `./source/project/${inputArgs.projKey}`;
+const projPath = `./data/source/project/${inputArgs.projKey}`;
 const flagsDir = `${projPath}/flags`;
 
 // Get list of all flag files

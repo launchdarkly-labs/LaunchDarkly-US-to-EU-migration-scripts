@@ -9,8 +9,8 @@ import {
   ldAPIPostRequest,
   rateLimitRequest,
   delay
-} from "./utils.ts";
-import * as Colors from "https://deno.land/std/fmt/colors.ts";
+} from "../utils/utils.ts";
+import * as Colors from "https://deno.land/std@0.149.0/fmt/colors.ts";
 
 // Uncommented these give an import error due to axios
 // import {
@@ -40,7 +40,7 @@ let inputArgs: Arguments = yargs(Deno.args)
 
 // Project Data //
 const projectJson = await getJson(
-  `./source/project/${inputArgs.projKeySource}/project.json`,
+  `./data/source/project/${inputArgs.projKeySource}/project.json`,
 );
 
 const buildEnv: Array<any> = [];
@@ -90,7 +90,7 @@ await projResp.json();
 
 for (const env of projRep.environments.items) {
   const segmentData = await getJson(
-    `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
+    `./data/source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
 
   // We are ignoring big segments/synced segments for now
@@ -164,7 +164,7 @@ for (const env of projRep.environments.items) {
 
 // Flag Data //
 const flagList: Array<string> = await getJson(
-  `./source/project/${inputArgs.projKeySource}/flags.json`,
+  `./data/source/project/${inputArgs.projKeySource}/flags.json`,
 );
 
 const flagsDoubleCheck: string[] = [];
@@ -176,7 +176,7 @@ for (const [index, flagkey] of flagList.entries()) {
   console.log(`Reading flag ${index + 1} of ${flagList.length} : ${flagkey}`);
 
   const flag = await getJson(
-    `./source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
+    `./data/source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
   );
 
   const newVariations = flag.variations.map(({ _id, ...rest }) => rest);
