@@ -20,7 +20,7 @@ let inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKey")
   .alias("m", "mappingFile")
   .demandOption(["p", "m"])
-  .argv;
+  .parse() as Arguments;
 
 // Read and parse the mapping file
 const mappingContent = await Deno.readTextFile(inputArgs.mappingFile);

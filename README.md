@@ -23,6 +23,54 @@ project-migrator-script/
   - If you use Homebrew: `brew install deno`
 - LaunchDarkly API key with appropriate permissions
 
+## Deno Configuration
+
+The project uses Deno's task runner to simplify command execution. Tasks are defined in `config/deno.json` and can be run using the `deno task` command.
+
+### Setting Up Deno Tasks
+
+1. **Install Deno** (if not already installed):
+   ```bash
+   # macOS
+   brew install deno
+   
+   # Windows (PowerShell)
+   iwr https://deno.land/install.ps1 -useb | iex
+   
+   # Linux
+   curl -fsSL https://deno.land/x/install/install.sh | sh
+   ```
+
+2. **Verify Installation**:
+   ```bash
+   deno --version
+   ```
+
+3. **Configure VS Code** (optional but recommended):
+   - Install the "Deno" extension from the VS Code marketplace
+   - The project includes `.vscode/settings.json` with recommended Deno settings
+
+4. **Project Configuration**:
+   - The project uses `config/deno.json` for task definitions
+   - `config/import_map.json` manages module imports
+   - These files are already configured in the project
+
+### Available Tasks
+
+The following tasks are configured in `config/deno.json`:
+
+```json
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-read --allow-write src/scripts/source.ts",
+    "update-maintainers": "deno run --allow-read --allow-write src/scripts/update_maintainers.ts",
+    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts"
+  }
+}
+```
+
+Each task includes the necessary permissions for file and network access.
+
 ## Deno Tasks
 
 The project includes predefined Deno tasks for easier execution. You can run these tasks using the `deno task` command:
@@ -38,7 +86,30 @@ deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_m
 deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 ```
 
-These tasks are configured in `config/deno.json` and include all necessary permissions.
+### Task Descriptions
+
+1. **start**: Downloads all project data (flags, segments, environments) from the source project
+   - Requires network access for API calls
+   - Requires file system access to save downloaded data
+   - Creates directory structure in `data/source/project/`
+
+2. **update-maintainers**: Updates maintainer IDs in local flag files
+   - Requires file system access to read and write flag files
+   - Uses mapping file from `data/mappings/maintainer_mapping.json`
+
+3. **migrate**: Creates a new project with all components
+   - Requires network access for API calls
+   - Requires file system access to read source data
+   - Creates new project with all flags, segments, and environments
+
+### Task Permissions
+
+Each task includes the necessary permissions:
+- `--allow-net`: Required for API calls to LaunchDarkly
+- `--allow-read`: Required for reading local files
+- `--allow-write`: Required for writing downloaded data
+
+These permissions are automatically included in the task definitions, so you don't need to specify them manually.
 
 ## Quick Start
 

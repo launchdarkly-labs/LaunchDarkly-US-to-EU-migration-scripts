@@ -15,7 +15,8 @@ let inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKey")
   .alias("k", "apikey")
   .alias("u", "domain")
-  .default("u", "app.launchdarkly.com").argv;
+  .default("u", "app.launchdarkly.com")
+  .parse() as Arguments;
 
 // ensure output directory exists
 const projPath = `./data/source/project/${inputArgs.projKey}`;

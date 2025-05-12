@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
+import { Arguments } from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import {
   buildPatch,
   buildRules,
@@ -28,7 +29,7 @@ interface Arguments {
 // Removed the unused maintainerId property
 }
 
-let inputArgs: Arguments = yargs(Deno.args)
+let inputArgs: Arguments = (yargs(Deno.args)
   .alias("p", "projKeySource")
   .alias("d", "projKeyDest")
   .alias("k", "apikey")
@@ -36,7 +37,7 @@ let inputArgs: Arguments = yargs(Deno.args)
   .alias("m", "maintainerId")
   .default("u", "app.launchdarkly.com")
   .demandOption(["p", "d", "k"])
-  .argv;
+  .parse() as unknown) as Arguments;
 
 // Project Data //
 const projectJson = await getJson(
@@ -119,6 +120,7 @@ for (const env of projRep.environments.items) {
 
     const segmentResp = await rateLimitRequest(
       post,
+      'segments'
     );
 
     const segmentStatus = await segmentResp.status;
@@ -152,6 +154,7 @@ for (const env of projRep.environments.items) {
         `segments/${inputArgs.projKeyDest}/${env.key}/${newSegment.key}`,
         sgmtPatches,
       ),
+      'segments'
     );
 
     const segPatchStatus = patchRules.statusText;
@@ -169,6 +172,13 @@ const flagList: Array<string> = await getJson(
 
 const flagsDoubleCheck: string[] = [];
 
+interface Variation {
+  _id: string;
+  value: any;
+  name?: string;
+  description?: string;
+}
+
 // Creating Global Flags //
 for (const [index, flagkey] of flagList.entries()) {
 
@@ -179,7 +189,7 @@ for (const [index, flagkey] of flagList.entries()) {
     `./data/source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
   );
 
-  const newVariations = flag.variations.map(({ _id, ...rest }) => rest);
+  const newVariations = flag.variations.map(({ _id, ...rest }: Variation) => rest);
 
   const newFlag: any = {
     key: flag.key,
@@ -281,7 +291,7 @@ projectJson.environments.items.forEach((env: any) => {
 //const envList: string[] = ["test"];
 
 
-async function makePatchCall(flagKey, patchReq, env) {
+async function makePatchCall(flagKey: string, patchReq: any[], env: string) {
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -289,6 +299,7 @@ async function makePatchCall(flagKey, patchReq, env) {
       `flags/${inputArgs.projKeyDest}/${flagKey}`,
       patchReq,
     ),
+    'flags'
   );
   const flagPatchStatus = await patchFlagReq.status;
   if (flagPatchStatus > 200) {
