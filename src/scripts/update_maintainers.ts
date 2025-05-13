@@ -47,11 +47,13 @@ for (const flagFile of flagFiles) {
   const flagData: FlagData = JSON.parse(flagContent);
 
   // Check if the flag has a maintainerId that needs to be updated
-  if (flagData.maintainerId && maintainerMapping[flagData.maintainerId]) {
+  if (flagData.maintainerId) {
     const oldMaintainerId = flagData.maintainerId;
-    const newMaintainerId = maintainerMapping[flagData.maintainerId];
+    const newMaintainerId = maintainerMapping[flagData.maintainerId] ?? null;
 
-    console.log(`Updating maintainer for flag ${flagKey}: ${oldMaintainerId} -> ${newMaintainerId}`);
+    console.log(
+      `Updating maintainer for flag ${flagKey}: ${oldMaintainerId} -> ${newMaintainerId}`
+    );
 
     // Update the maintainerId
     flagData.maintainerId = newMaintainerId;
@@ -59,9 +61,9 @@ for (const flagFile of flagFiles) {
     // Update the local file
     await Deno.writeTextFile(
       `${flagsDir}/${flagFile}`,
-      JSON.stringify(flagData, null, 2),
+      JSON.stringify(flagData, null, 2)
     );
   }
 }
 
-console.log("Finished updating maintainer IDs in local files"); 
+console.log("Finished updating maintainer IDs in local files");

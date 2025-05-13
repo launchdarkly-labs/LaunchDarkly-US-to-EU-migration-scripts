@@ -3,7 +3,13 @@ import {
   ensureDir,
   ensureDirSync,
 } from "https://deno.land/std@0.149.0/fs/mod.ts";
-import { consoleLogger, delay, ldAPIRequest, writeSourceData } from "../utils/utils.ts";
+import {
+  consoleLogger,
+  delay,
+  ldAPIRequest,
+  rateLimitRequest,
+  writeSourceData,
+} from "../utils/utils.ts";
 
 interface Arguments {
   projKey: string;
@@ -23,12 +29,13 @@ const projPath = `./data/source/project/${inputArgs.projKey}`;
 ensureDirSync(projPath);
 
 // Project Data //
-const projResp = await fetch(
+const projResp = await rateLimitRequest(
   ldAPIRequest(
     inputArgs.apikey,
     inputArgs.domain,
-    `projects/${inputArgs.projKey}?expand=environments`,
+    `projects/${inputArgs.projKey}?expand=environments`
   ),
+  "project"
 );
 if (projResp == null) {
   console.log("Failed getting project");
@@ -41,19 +48,17 @@ await writeSourceData(projPath, "project", projData);
 // Segment Data //
 
 if (projData.environments.items.length > 0) {
-
   console.log(`Found ${projData.environments.items.length} environments`);
 
   projData.environments.items.forEach(async (env: any) => {
-
     console.log(`Getting Segments for environment: ${env.key}`);
 
     const segmentResp = await fetch(
       ldAPIRequest(
         inputArgs.apikey,
         inputArgs.domain,
-        `segments/${inputArgs.projKey}/${env.key}`,
-      ),
+        `segments/${inputArgs.projKey}/${env.key}?limit=50`
+      )
     );
     if (segmentResp == null) {
       console.log("Failed getting Segments");
@@ -111,8 +116,7 @@ await writeSourceData(projPath, "flags", flags);
 ensureDirSync(`${projPath}/flags`);
 
 for (const [index, flagKey] of flags.entries()) {
-
-  console.log(`Getting flag ${index + 1} of ${flags.length}: ${flagKey}`)
+  console.log(`Getting flag ${index + 1} of ${flags.length}: ${flagKey}`);
 
   await delay(200);
 
@@ -120,11 +124,14 @@ for (const [index, flagKey] of flags.entries()) {
     ldAPIRequest(
       inputArgs.apikey,
       inputArgs.domain,
-      `flags/${inputArgs.projKey}/${flagKey}`,
-    ),
+      `flags/${inputArgs.projKey}/${flagKey}`
+    )
   );
   if (flagResp.status > 201) {
-    consoleLogger(flagResp.status, `Error getting flag '${flagKey}': ${flagResp.status}`);
+    consoleLogger(
+      flagResp.status,
+      `Error getting flag '${flagKey}': ${flagResp.status}`
+    );
     consoleLogger(flagResp.status, await flagResp.text());
   }
   if (flagResp == null) {
