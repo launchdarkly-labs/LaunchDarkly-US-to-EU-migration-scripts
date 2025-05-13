@@ -1,6 +1,7 @@
 # Project Migrator
 
-A tool for migrating LaunchDarkly projects, including flags, segments, and environments.
+A tool for migrating LaunchDarkly projects, including flags, segments, and
+environments.
 
 ## Project Structure
 
@@ -23,41 +24,51 @@ project-migrator-script/
   - If you use Homebrew: `brew install deno`
 - LaunchDarkly API key with appropriate permissions
 
-## Deno Configuration
+## Quick Start
 
-The project uses Deno's task runner to simplify command execution. Tasks are defined in `config/deno.json` and can be run using the `deno task` command.
-
-### Setting Up Deno Tasks
-
-1. **Install Deno** (if not already installed):
+1. **Download Source Project Data**
    ```bash
-   # macOS
-   brew install deno
-   
-   # Windows (PowerShell)
-   iwr https://deno.land/install.ps1 -useb | iex
-   
-   # Linux
-   curl -fsSL https://deno.land/x/install/install.sh | sh
+   # Using deno task (recommended)
+   deno task start -p SOURCE_PROJECT_KEY -k API_KEY
+
+   # Or using deno run directly
+   deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k API_KEY
    ```
 
-2. **Verify Installation**:
+2. **(Optional) Update Maintainer IDs**
+
+   The member accounts across different account instances will be assigned
+   different
+
    ```bash
-   deno --version
+   # 1. Create mapping file in data/mappings/maintainer_mapping.json
+   # 2. Run update script
+
+   # Using deno task (recommended)
+   deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
+
+   # Or using deno run directly
+   deno run --allow-read --allow-write src/scripts/update_maintainers.ts -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
    ```
 
-3. **Configure VS Code** (optional but recommended):
-   - Install the "Deno" extension from the VS Code marketplace
-   - The project includes `.vscode/settings.json` with recommended Deno settings
+3. **Migrate Project**
+   ```bash
+   # Using deno task (recommended)
+   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 
-4. **Project Configuration**:
-   - The project uses `config/deno.json` for task definitions
-   - `config/import_map.json` manages module imports
-   - These files are already configured in the project
+   # Or using deno run directly
+   deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
+   ```
+
+For more information about using Deno tasks, see
+[Using Deno Tasks](#using-deno-tasks) below.
+
+## Using Deno Tasks
+
+The project includes predefined Deno tasks for easier execution. These tasks are
+configured in `deno.json` and include all necessary permissions.
 
 ### Available Tasks
-
-The following tasks are configured in `config/deno.json`:
 
 ```json
 {
@@ -69,26 +80,10 @@ The following tasks are configured in `config/deno.json`:
 }
 ```
 
-Each task includes the necessary permissions for file and network access.
-
-## Deno Tasks
-
-The project includes predefined Deno tasks for easier execution. You can run these tasks using the `deno task` command:
-
-```bash
-# Download source project data
-deno task start -p SOURCE_PROJECT_KEY -k API_KEY
-
-# Update maintainer IDs
-deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
-
-# Migrate project
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
-```
-
 ### Task Descriptions
 
-1. **start**: Downloads all project data (flags, segments, environments) from the source project
+1. **start**: Downloads all project data (flags, segments, environments) from
+   the source project
    - Requires network access for API calls
    - Requires file system access to save downloaded data
    - Creates directory structure in `data/source/project/`
@@ -105,43 +100,28 @@ deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 ### Task Permissions
 
 Each task includes the necessary permissions:
+
 - `--allow-net`: Required for API calls to LaunchDarkly
 - `--allow-read`: Required for reading local files
 - `--allow-write`: Required for writing downloaded data
 
-These permissions are automatically included in the task definitions, so you don't need to specify them manually.
-
-## Quick Start
-
-1. **Download Source Project Data**
-   ```bash
-   deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k API_KEY
-   ```
-
-2. **(Optional) Update Maintainer IDs**
-   ```bash
-   # 1. Create mapping file in data/mappings/maintainer_mapping.json
-   # 2. Run update script
-   deno run --allow-read --allow-write src/scripts/update_maintainers.ts -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
-   ```
-
-3. **Migrate Project**
-   ```bash
-   deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
-   ```
+These permissions are automatically included in the task definitions, so you
+don't need to specify them manually.
 
 ## Detailed Usage
 
 ### 1. Download Source Project Data
 
 Downloads all project data to `data/source/project/SOURCE_PROJECT_KEY/`:
+
 ```bash
-deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k API_KEY
+deno task start -p SOURCE_PROJECT_KEY -k API_KEY
 ```
 
 ### 2. Update Maintainer IDs (Optional)
 
 Create a mapping file at `data/mappings/maintainer_mapping.json`:
+
 ```json
 {
   "old-maintainer-id-1": "new-maintainer-id-1",
@@ -150,33 +130,40 @@ Create a mapping file at `data/mappings/maintainer_mapping.json`:
 ```
 
 Update maintainer IDs in local files:
+
 ```bash
-deno run --allow-read --allow-write src/scripts/update_maintainers.ts -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
+deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
 ```
 
 ### 3. Migrate Project
 
 Creates a new project with all components:
+
 ```bash
-deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 ```
 
 ## Command Line Arguments
 
 ### source.ts
+
 - `-p, --projKey`: Source project key
 - `-k, --apikey`: LaunchDarkly API key
-- `-u, --domain`: (Optional) LaunchDarkly domain, defaults to "app.launchdarkly.com"
+- `-u, --domain`: (Optional) LaunchDarkly domain, defaults to
+  "app.launchdarkly.com"
 
 ### update_maintainers.ts
+
 - `-p, --projKey`: Project key
 - `-m, --mappingFile`: Path to the maintainer ID mapping file
 
 ### migrate.ts
+
 - `-p, --projKeySource`: Source project key
 - `-d, --projKeyDest`: Destination project key
 - `-k, --apikey`: LaunchDarkly API key
-- `-u, --domain`: (Optional) LaunchDarkly domain, defaults to "app.launchdarkly.com"
+- `-u, --domain`: (Optional) LaunchDarkly domain, defaults to
+  "app.launchdarkly.com"
 
 ## Important Notes
 
@@ -196,8 +183,12 @@ deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts -p SOURCE
 
 ## Things you Should Consider when migrating flags?
 
-- What can you scope down? Do all the flags need to moved over or can we use this as a way to clean up the environment?
+- What can you scope down? Do all the flags need to moved over or can we use
+  this as a way to clean up the environment?
 - Do all my environments need to go? or maybe just a few?
-- Am I able to stop edits in the destination project?  This script does not keep them in sync, so if changes need to be made they should be prior
-- Who is going to run it and how? The calls can take a while, with rate limits, so should I run it on an EC2 or the like?
-- If I have thousands or even hundreds of updates: what is critical, how will I verify the changes are correct?
+- Am I able to stop edits in the destination project? This script does not keep
+  them in sync, so if changes need to be made they should be prior
+- Who is going to run it and how? The calls can take a while, with rate limits,
+  so should I run it on an EC2 or the like?
+- If I have thousands or even hundreds of updates: what is critical, how will I
+  verify the changes are correct?
