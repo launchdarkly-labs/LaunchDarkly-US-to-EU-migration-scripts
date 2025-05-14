@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
 import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
-import { Arguments } from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import {
   buildPatch,
   buildRules,
@@ -9,7 +8,7 @@ import {
   ldAPIPatchRequest,
   ldAPIPostRequest,
   rateLimitRequest,
-  delay
+  // delay
 } from "../utils/utils.ts";
 import * as Colors from "https://deno.land/std@0.149.0/fmt/colors.ts";
 
@@ -29,7 +28,7 @@ interface Arguments {
 // Removed the unused maintainerId property
 }
 
-let inputArgs: Arguments = (yargs(Deno.args)
+const inputArgs: Arguments = (yargs(Deno.args)
   .alias("p", "projKeySource")
   .alias("d", "projKeyDest")
   .alias("k", "apikey")

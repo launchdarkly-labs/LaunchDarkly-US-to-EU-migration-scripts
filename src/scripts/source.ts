@@ -1,6 +1,6 @@
 import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
 import {
-  ensureDir,
+  // ensureDir,
   ensureDirSync,
 } from "https://deno.land/std@0.149.0/fs/mod.ts";
 import {
@@ -17,7 +17,7 @@ interface Arguments {
   domain: string;
 }
 
-let inputArgs: Arguments = yargs(Deno.args)
+const inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKey")
   .alias("k", "apikey")
   .alias("u", "domain")

@@ -1,6 +1,6 @@
 import yargs from "https://deno.land/x/yargs@v17.7.2-deno/deno.ts";
-import { ensureDirSync } from "https://deno.land/std@0.149.0/fs/mod.ts";
-import { consoleLogger } from "../utils/utils.ts";
+// import { ensureDirSync } from "https://deno.land/std@0.149.0/fs/mod.ts";
+// import { consoleLogger } from "../utils/utils.ts";
 
 interface Arguments {
   projKey: string;
@@ -16,7 +16,7 @@ interface FlagData {
   [key: string]: any;
 }
 
-let inputArgs: Arguments = yargs(Deno.args)
+const inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKey")
   .alias("m", "mappingFile")
   .demandOption(["p", "m"])
