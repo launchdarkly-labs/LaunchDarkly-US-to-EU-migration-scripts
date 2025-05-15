@@ -37,27 +37,30 @@ project-migrator-script/
 
 2. **(Optional) Update Maintainer IDs**
 
-   The member accounts across different account instances will be assigned
-   different
+   Member accounts across different LaunchDarkly instances will have different
+   IDs. To properly assign maintainers in the destination project, you must
+   first create a mapping between the old and new maintainer IDs.
 
    ```bash
    # 1. Create mapping file in data/mappings/maintainer_mapping.json
-   # 2. Run update script
+   # Example mapping file:
+   {
+     "old-maintainer-id-1": "new-maintainer-id-1",
+     "old-maintainer-id-2": "new-maintainer-id-2"
+   }
 
-   # Using deno task (recommended)
+   # 2. Run update script to apply the mapping
    deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
-
-   # Or using deno run directly
-   deno run --allow-read --allow-write src/scripts/update_maintainers.ts -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
    ```
 
 3. **Migrate Project**
    ```bash
    # Using deno task (recommended)
-   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
+   # If you've created a maintainer mapping and want to assign maintainers:
+   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY -m
 
-   # Or using deno run directly
-   deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
+   # If you haven't created a maintainer mapping, omit the -m flag:
+   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
    ```
 
 For more information about using Deno tasks, see
@@ -91,11 +94,13 @@ configured in `deno.json` and include all necessary permissions.
 2. **update-maintainers**: Updates maintainer IDs in local flag files
    - Requires file system access to read and write flag files
    - Uses mapping file from `data/mappings/maintainer_mapping.json`
+   - Must be run before migration if you want to assign maintainers
 
 3. **migrate**: Creates a new project with all components
    - Requires network access for API calls
    - Requires file system access to read source data
    - Creates new project with all flags, segments, and environments
+   - Can optionally assign maintainers if mapping was done
 
 ### Task Permissions
 
@@ -140,6 +145,10 @@ deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_m
 Creates a new project with all components:
 
 ```bash
+# If you've created a maintainer mapping and want to assign maintainers:
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY -m
+
+# If you haven't created a maintainer mapping, omit the -m flag:
 deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 ```
 
@@ -164,12 +173,18 @@ deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
 - `-k, --apikey`: LaunchDarkly API key
 - `-u, --domain`: (Optional) LaunchDarkly domain, defaults to
   "app.launchdarkly.com"
+- `-m, --assignMaintainerIds`: (Optional) Whether to assign maintainer IDs from
+  source project, defaults to false. Requires maintainer mapping to be done
+  first.
 
 ## Important Notes
 
-- The script preserves all original maintainer IDs by default
-- Use update_maintainers.ts only if you need to change maintainer IDs
-- The update_maintainers.ts script only modifies local files
+- Maintainer IDs cannot be directly preserved between different LaunchDarkly
+  instances
+- You must create a mapping between old and new maintainer IDs before using the
+  `-m` flag
+- The update_maintainers.ts script must be run before migration if you want to
+  assign maintainers
 - Test the migration in a non-production environment first
 - The destination project must not exist before migration
 - Maximum 20 environments per project
@@ -192,3 +207,5 @@ deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
   so should I run it on an EC2 or the like?
 - If I have thousands or even hundreds of updates: what is critical, how will I
   verify the changes are correct?
+- Have you created a mapping between old and new maintainer IDs? Without this
+  mapping, you cannot assign maintainers in the destination project.

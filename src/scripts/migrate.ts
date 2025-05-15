@@ -12,20 +12,12 @@ import {
 } from "../utils/utils.ts";
 import * as Colors from "https://deno.land/std@0.149.0/fmt/colors.ts";
 
-// Uncommented these give an import error due to axios
-// import {
-//   EnvironmentPost,
-//   Project,
-//   ProjectPost,
-//   FeatureFlagBody
-// } from "https://github.com/launchdarkly/api-client-typescript/raw/main/api.ts";
-
 interface Arguments {
   projKeySource: string;
   projKeyDest: string;
   apikey: string;
   domain: string;
-// Removed the unused maintainerId property
+  assignMaintainerIds: boolean;
 }
 
 const inputArgs: Arguments = (yargs(Deno.args)
@@ -33,8 +25,9 @@ const inputArgs: Arguments = (yargs(Deno.args)
   .alias("d", "projKeyDest")
   .alias("k", "apikey")
   .alias("u", "domain")
-  .alias("m", "maintainerId")
+  .alias("m", "assignMaintainerIds")
   .default("u", "app.launchdarkly.com")
+  .default("m", false)
   .demandOption(["p", "d", "k"])
   .parse() as unknown) as Arguments;
 
@@ -196,13 +189,18 @@ for (const [index, flagkey] of flagList.entries()) {
     variations: newVariations,
     temporary: flag.temporary,
     tags: flag.tags,
-    description: flag.description
+    description: flag.description,
+    maintainerId: null  // Set to null by default to prevent API from assigning token owner
   };
 
-  // Preserve the original maintainerId if it exists
-  if (flag.maintainerId) {
+  // Only assign maintainerId if explicitly requested and mapping exists
+  if (inputArgs.assignMaintainerIds && flag.maintainerId) {
     newFlag.maintainerId = flag.maintainerId;
     console.log(`\tPreserving maintainer: ${flag.maintainerId} for flag: ${flag.key}`);
+  } else {
+    // Ensure maintainerId is null if no mapping or not requested
+    newFlag.maintainerId = null;
+    console.log(`\tNo maintainer assigned for flag: ${flag.key}`);
   }
 
   if (flag.clientSideAvailability) {
@@ -234,6 +232,9 @@ for (const [index, flagkey] of flagList.entries()) {
     console.log("\tFlag created");
   } else {
     console.log(`Error for flag ${newFlag.key}: ${flagResp.status}`);
+    const errorText = await flagResp.text();
+    console.log(`Error details: ${errorText}`);
+    console.log(`Request payload: ${JSON.stringify(newFlag, null, 2)}`);
   }
 
   // Add flag env settings

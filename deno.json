@@ -11,6 +11,7 @@
   "tasks": {
     "start": "deno run --allow-net --allow-read --allow-write src/scripts/source.ts",
     "update-maintainers": "deno run --allow-read --allow-write src/scripts/update_maintainers.ts",
-    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts"
+    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts",
+    "patch-salt": "deno run --allow-net src/scripts/patch_flag_salt.ts"
   }
 }
