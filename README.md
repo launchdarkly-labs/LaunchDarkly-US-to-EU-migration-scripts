@@ -18,12 +18,12 @@ that are currently supported:
 
 ```
 root/
-├── src/                    # Source code
-│   ├── scripts/           # Main migration scripts
-│   ├── utils/             # Utility functions
-│   └── types/             # TypeScript type definitions
-├── config/                # Configuration files
-├── data/                  # Data directory
+├── src/                  # Source code
+│   ├── scripts/          # Main migration scripts
+│   ├── utils/            # Utility functions
+│   └── types/            # TypeScript type definitions
+├── config/               # Configuration files
+├── data/                 # Data directory
 │   ├── source/           # Downloaded source project data
 │   └── mappings/         # Mapping files (e.g., maintainer IDs)
 └── .vscode/              # VS Code settings
@@ -42,47 +42,59 @@ root/
 
 1. **Download Source Project Data from US Instance**
 
-Download source project data to `data/source/project/SOURCE_PROJECT_KEY/`.
+   Download source project data to `data/source/project/SOURCE_PROJECT_KEY/`.
 
-```bash
-# Using deno task (recommended)
-deno task start -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
+   ```bash
+   # Using deno task (recommended)
+   deno task start -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
 
-# Or using deno run directly
-deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
-```
+   # Or using deno run directly
+   deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
+   ```
 
-2. **Update Maintainer IDs for EU Instance**
+2. **Create Member ID Mapping**
+
+   Automatically create a mapping between US and EU member IDs based on email
+   addresses.
+
+   ```bash
+   # Using deno task (recommended)
+   deno task map-members -k US_API_KEY -e EU_API_KEY
+
+   # Or using deno run directly
+   deno run --allow-net --allow-read --allow-write src/scripts/map_members.ts -k US_API_KEY -e EU_API_KEY
+   ```
+
+   This will:
+   - Fetch all members from both US and EU instances
+   - Match members based on their email addresses
+   - Create a mapping file at `data/mappings/maintainer_mapping.json`
+   - Show a summary of mapped and unmapped members
+
+3. **Update Maintainer IDs for EU Instance**
 
    Member accounts in US and EU instances have different IDs. If you want to
    persist the flag maintainers during the migration, you must create a mapping
    between US and EU maintainer IDs.
 
    ```bash
-   # 1. Create mapping file in data/mappings/maintainer_mapping.json
-   # Example mapping file:
-   {
-     "us-maintainer-id-1": "eu-maintainer-id-1",
-     "us-maintainer-id-2": "eu-maintainer-id-2"
-   }
-
-   # 2. Run update script to apply the mapping
+   # Run update script to apply the mapping
    deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
    ```
 
-3. **Migrate Project to EU Instance**
+4. **Migrate Project to EU Instance**
 
-Creates a new project in the target account with, including environments, flags,
-and segments.
+   Creates a new project in the target account with, including environments,
+   flags, and segments.
 
-```bash
-# Using deno task (recommended)
-# If you've created a maintainer mapping and want to assign maintainers:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com -m
+   ```bash
+   # Using deno task (recommended)
+   # If you've created a maintainer mapping and want to assign maintainers:
+   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com -m
 
-# If you haven't created a maintainer mapping, omit the -m flag:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com
-```
+   # If you haven't created a maintainer mapping, omit the -m flag:
+   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com
+   ```
 
 For more information about using Deno tasks, see
 [Using Deno Tasks](#using-deno-tasks) below.
@@ -98,6 +110,7 @@ configured in `deno.json` and include all necessary permissions.
 {
   "tasks": {
     "start": "deno run --allow-net --allow-read --allow-write src/scripts/source.ts",
+    "map-members": "deno run --allow-net --allow-read --allow-write src/scripts/map_members.ts",
     "update-maintainers": "deno run --allow-read --allow-write src/scripts/update_maintainers.ts",
     "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts"
   }
@@ -112,12 +125,18 @@ configured in `deno.json` and include all necessary permissions.
    - Requires file system access to save downloaded data
    - Creates directory structure in `data/source/project/`
 
-2. **update-maintainers**: Updates maintainer IDs in local flag files
+2. **map-members**: Creates a mapping between US and EU member IDs
+   - Fetches members from both US and EU instances
+   - Matches members based on email addresses
+   - Creates a mapping file in `data/mappings/maintainer_mapping.json`
+   - Shows a summary of mapped and unmapped members
+
+3. **update-maintainers**: Updates maintainer IDs in local flag files
    - Requires file system access to read and write flag files
    - Uses mapping file from `data/mappings/maintainer_mapping.json`
    - Must be run before migration if you want to assign maintainers
 
-3. **migrate**: Creates a new project with all components
+4. **migrate**: Creates a new project with all components
    - Requires network access for API calls
    - Requires file system access to read source data
    - Creates new project with all flags, segments, and environments
@@ -134,45 +153,6 @@ Each task includes the necessary permissions:
 These permissions are automatically included in the task definitions, so you
 don't need to specify them manually.
 
-## Detailed Usage
-
-### 1. Download Source Project Data
-
-Downloads all project data to `data/source/project/SOURCE_PROJECT_KEY/`:
-
-```bash
-deno task start -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
-```
-
-### 2. Update Maintainer IDs (Optional)
-
-Create a mapping file at `data/mappings/maintainer_mapping.json`:
-
-```json
-{
-  "us-maintainer-id-1": "eu-maintainer-id-1",
-  "us-maintainer-id-2": "eu-maintainer-id-2"
-}
-```
-
-Update maintainer IDs in local files:
-
-```bash
-deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
-```
-
-### 3. Migrate Project
-
-Creates a new project with all components:
-
-```bash
-# If you've created a maintainer mapping and want to assign maintainers:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com -m
-
-# If you haven't created a maintainer mapping, omit the -m flag:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com
-```
-
 ## Command Line Arguments
 
 ### source.ts
@@ -181,6 +161,13 @@ deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY
 - `-k, --apikey`: LaunchDarkly API key
 - `-u, --domain`: (Optional) LaunchDarkly domain, defaults to
   "app.launchdarkly.com"
+
+### map_members.ts
+
+- `-k, --us-key`: US instance API key
+- `-e, --eu-key`: EU instance API key
+- `-o, --output`: (Optional) Output file path, defaults to
+  "data/mappings/maintainer_mapping.json"
 
 ### update_maintainers.ts
 
