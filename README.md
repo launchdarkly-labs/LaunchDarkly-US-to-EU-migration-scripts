@@ -1,12 +1,23 @@
-# Project Migrator
+# LaunchDarkly US to EU Project Migration Tool
 
-A tool for migrating LaunchDarkly projects, including flags, segments, and
-environments.
+A tool for migrating LaunchDarkly projects from US-hosted accounts to EU-hosted
+ones. The supported resources include: environments, flags, segments
+
+## Overview
+
+This tool helps you migrate your LaunchDarkly projects from US-hosted accounts
+(app.launchdarkly.com) to EU-hosted accounts (app.eu.launchdarkly.com). Features
+that are currently supported:
+
+- Project & environment configuration and settings
+- Feature flags and their configurations
+- Segments and targeting rules
+- Maintainer mapping acros the different account instances
 
 ## Project Structure
 
 ```
-project-migrator-script/
+root/
 ├── src/                    # Source code
 │   ├── scripts/           # Main migration scripts
 │   ├── utils/             # Utility functions
@@ -23,45 +34,55 @@ project-migrator-script/
 - [Deno](https://deno.land/) installed
   - If you use Homebrew: `brew install deno`
 - LaunchDarkly API key with appropriate permissions
+  - US account API key for source project with at least Reader access
+  - EU account API key for destination project with at least Writer access
+- Access to both US and EU LaunchDarkly instances
 
 ## Quick Start
 
-1. **Download Source Project Data**
-   ```bash
-   # Using deno task (recommended)
-   deno task start -p SOURCE_PROJECT_KEY -k API_KEY
+1. **Download Source Project Data from US Instance**
 
-   # Or using deno run directly
-   deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k API_KEY
-   ```
+Download source project data to `data/source/project/SOURCE_PROJECT_KEY/`.
 
-2. **(Optional) Update Maintainer IDs**
+```bash
+# Using deno task (recommended)
+deno task start -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
 
-   Member accounts across different LaunchDarkly instances will have different
-   IDs. To properly assign maintainers in the destination project, you must
-   first create a mapping between the old and new maintainer IDs.
+# Or using deno run directly
+deno run --allow-net --allow-read --allow-write src/scripts/source.ts -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
+```
+
+2. **Update Maintainer IDs for EU Instance**
+
+   Member accounts in US and EU instances have different IDs. If you want to
+   persist the flag maintainers during the migration, you must create a mapping
+   between US and EU maintainer IDs.
 
    ```bash
    # 1. Create mapping file in data/mappings/maintainer_mapping.json
    # Example mapping file:
    {
-     "old-maintainer-id-1": "new-maintainer-id-1",
-     "old-maintainer-id-2": "new-maintainer-id-2"
+     "us-maintainer-id-1": "eu-maintainer-id-1",
+     "us-maintainer-id-2": "eu-maintainer-id-2"
    }
 
    # 2. Run update script to apply the mapping
    deno task update-maintainers -p SOURCE_PROJECT_KEY -m data/mappings/maintainer_mapping.json
    ```
 
-3. **Migrate Project**
-   ```bash
-   # Using deno task (recommended)
-   # If you've created a maintainer mapping and want to assign maintainers:
-   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY -m
+3. **Migrate Project to EU Instance**
 
-   # If you haven't created a maintainer mapping, omit the -m flag:
-   deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
-   ```
+Creates a new project in the target account with, including environments, flags,
+and segments.
+
+```bash
+# Using deno task (recommended)
+# If you've created a maintainer mapping and want to assign maintainers:
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com -m
+
+# If you haven't created a maintainer mapping, omit the -m flag:
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com
+```
 
 For more information about using Deno tasks, see
 [Using Deno Tasks](#using-deno-tasks) below.
@@ -120,7 +141,7 @@ don't need to specify them manually.
 Downloads all project data to `data/source/project/SOURCE_PROJECT_KEY/`:
 
 ```bash
-deno task start -p SOURCE_PROJECT_KEY -k API_KEY
+deno task start -p SOURCE_PROJECT_KEY -k US_API_KEY -u app.launchdarkly.com
 ```
 
 ### 2. Update Maintainer IDs (Optional)
@@ -129,8 +150,8 @@ Create a mapping file at `data/mappings/maintainer_mapping.json`:
 
 ```json
 {
-  "old-maintainer-id-1": "new-maintainer-id-1",
-  "old-maintainer-id-2": "new-maintainer-id-2"
+  "us-maintainer-id-1": "eu-maintainer-id-1",
+  "us-maintainer-id-2": "eu-maintainer-id-2"
 }
 ```
 
@@ -146,10 +167,10 @@ Creates a new project with all components:
 
 ```bash
 # If you've created a maintainer mapping and want to assign maintainers:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY -m
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com -m
 
 # If you haven't created a maintainer mapping, omit the -m flag:
-deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
+deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k EU_API_KEY -u app.eu.launchdarkly.com
 ```
 
 ## Command Line Arguments
@@ -177,35 +198,52 @@ deno task migrate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY -k API_KEY
   source project, defaults to false. Requires maintainer mapping to be done
   first.
 
-## Important Notes
+## Important Notes for US to EU Migration
 
-- Maintainer IDs cannot be directly preserved between different LaunchDarkly
-  instances
-- You must create a mapping between old and new maintainer IDs before using the
-  `-m` flag
-- The update_maintainers.ts script must be run before migration if you want to
-  assign maintainers
-- Test the migration in a non-production environment first
+- The migration process is one-way and cannot be reversed automatically
+- Maintainer IDs are different between US and EU instances and must be mapped
+  manually
+- Environment names and keys must be unique in the destination project
 - The destination project must not exist before migration
 - Maximum 20 environments per project
 - Monitor for 400 errors in flag configurations
+- Consider timezone differences between US and EU instances
+- Ensure compliance with EU data protection regulations
+- Test the migration in a non-production environment first
+
+## Pre-Migration Checklist
+
+1. **Data Assessment**
+   - What flags and segments need to be migrated?
+   - Can you use this as an opportunity to clean up unused resources?
+   - Experiments, guarded or randomised (percentage-based) rollouts can't be
+     migrated while maintaining consistent variation bucketing. These types of
+     releases should ideally be completed before the migration takes place.
+
+2. **Access and Permissions**
+   - Do you have API access to both US and EU instances?
+   - Have you created the necessary API keys?
+   - Do you have sufficient access to create projects in the EU instance?
+
+3. **Maintainer Mapping**
+   - Have all the members who are set as maintainers in the US account been
+     added to the EU instance?
+   - Have you created the maintainer ID mapping file?
+
+4. **Timing and Execution**
+   - When is the best time to perform the migration?
+   - How will you handle ongoing changes during migration?
+   - Do you need to maintain consistent state between two two account instances
+     after the migration? If so, for how long?
 
 ## Known Issues
 
 - TypeScript types are loose due to API client limitations
 - Importing LaunchDarkly API TypeScript types causes import errors
 - Rate limiting may affect flag configuration updates
+- Some custom integrations may need to be reconfigured for EU endpoints
 
-## Things you Should Consider when migrating flags?
+## Support
 
-- What can you scope down? Do all the flags need to moved over or can we use
-  this as a way to clean up the environment?
-- Do all my environments need to go? or maybe just a few?
-- Am I able to stop edits in the destination project? This script does not keep
-  them in sync, so if changes need to be made they should be prior
-- Who is going to run it and how? The calls can take a while, with rate limits,
-  so should I run it on an EC2 or the like?
-- If I have thousands or even hundreds of updates: what is critical, how will I
-  verify the changes are correct?
-- Have you created a mapping between old and new maintainer IDs? Without this
-  mapping, you cannot assign maintainers in the destination project.
+For issues related to the migration tool, please create an issue in this
+repository. For LaunchDarkly-specific questions, contact LaunchDarkly support.
