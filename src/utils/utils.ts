@@ -5,8 +5,10 @@ const apiVersion = "20240415";
 export async function getJson(filePath: string) {
   try {
     return JSON.parse(await Deno.readTextFile(filePath));
-  } catch (e) {
-    console.log(filePath + ": " + e.message);
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      console.log(filePath + ": " + e.message);
+    }
   }
 }
 
@@ -111,8 +113,23 @@ export function buildPatch(key: string, op: string, value: any) {
   };
 }
 
+export interface RuleClause {
+  _id: string;
+  [key: string]: unknown;
+}
+
+export interface Rule {
+  clauses: RuleClause[];
+  _id: string;
+  generation: number;
+  deleted: boolean;
+  version: number;
+  ref: string;
+  [key: string]: unknown;
+}
+
 export function buildRules(
-  rules: any,
+  rules: Rule[],
   env?: string,
 ): { path: string; op: string; value: any }[] {
   const newRules: { path: string; op: string; value: any }[] = [];

@@ -10,29 +10,29 @@ import {
   rateLimitRequest,
   writeSourceData,
 } from "../utils/utils.ts";
+import { getUsApiKey } from "../utils/api_keys.ts";
 
 interface Arguments {
   projKey: string;
-  apikey: string;
-  domain: string;
 }
 
 const inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKey")
-  .alias("k", "apikey")
-  .alias("u", "domain")
-  .default("u", "app.launchdarkly.com")
   .parse() as Arguments;
 
 // ensure output directory exists
 const projPath = `./data/source/project/${inputArgs.projKey}`;
 ensureDirSync(projPath);
 
+// Get API key
+const apiKey = await getUsApiKey();
+const domain = "app.launchdarkly.com";
+
 // Project Data //
 const projResp = await rateLimitRequest(
   ldAPIRequest(
-    inputArgs.apikey,
-    inputArgs.domain,
+    apiKey,
+    domain,
     `projects/${inputArgs.projKey}?expand=environments`
   ),
   "project"
@@ -55,8 +55,8 @@ if (projData.environments.items.length > 0) {
 
     const segmentResp = await fetch(
       ldAPIRequest(
-        inputArgs.apikey,
-        inputArgs.domain,
+        apiKey,
+        domain,
         `segments/${inputArgs.projKey}/${env.key}?limit=50`
       )
     );
@@ -83,7 +83,7 @@ while (moreFlags) {
   console.log(`Building flag list: ${offset} to ${offset + pageSize}`);
 
   const flagsResp = await rateLimitRequest(
-    ldAPIRequest(inputArgs.apikey, inputArgs.domain, path),
+    ldAPIRequest(apiKey, domain, path),
     "flags"
   );
 
@@ -122,8 +122,8 @@ for (const [index, flagKey] of flags.entries()) {
 
   const flagResp = await fetch(
     ldAPIRequest(
-      inputArgs.apikey,
-      inputArgs.domain,
+      apiKey,
+      domain,
       `flags/${inputArgs.projKey}/${flagKey}`
     )
   );

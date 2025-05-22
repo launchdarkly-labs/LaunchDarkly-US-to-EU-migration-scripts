@@ -1,5 +1,6 @@
 import { parse } from "https://deno.land/std@0.177.0/flags/mod.ts";
 import { ldAPIRequest, rateLimitRequest } from "../utils/utils.ts";
+import { getUsApiKey, getEuApiKey } from "../utils/api_keys.ts";
 
 interface Member {
   _id: string;
@@ -46,10 +47,10 @@ async function fetchMembers(apiKey: string, domain: string): Promise<Member[]> {
   return allMembers;
 }
 
-async function createMemberMapping(
-  usApiKey: string,
-  euApiKey: string,
-): Promise<MemberMapping> {
+async function createMemberMapping(): Promise<MemberMapping> {
+  const usApiKey = await getUsApiKey();
+  const euApiKey = await getEuApiKey();
+
   console.log("Fetching members from US instance...");
   const usMembers = await fetchMembers(usApiKey, "app.launchdarkly.com");
   console.log(`Found ${usMembers.length} members in US instance`);
@@ -75,24 +76,16 @@ async function createMemberMapping(
 
 async function main() {
   const flags = parse(Deno.args, {
-    string: ["us-key", "eu-key", "output"],
+    string: ["output"],
     alias: {
-      "us-key": "k",
-      "eu-key": "e",
       "output": "o",
     },
   });
 
-  if (!flags["us-key"] || !flags["eu-key"]) {
-    console.error("Error: Both US and EU API keys are required");
-    console.error("Usage: deno run --allow-net map_members.ts -k US_API_KEY -e EU_API_KEY [-o output.json]");
-    Deno.exit(1);
-  }
-
   const outputFile = flags.output || "data/mappings/maintainer_mapping.json";
 
   try {
-    const mapping = await createMemberMapping(flags["us-key"], flags["eu-key"]);
+    const mapping = await createMemberMapping();
     
     // Ensure the output directory exists
     await Deno.mkdir("data/mappings", { recursive: true });
