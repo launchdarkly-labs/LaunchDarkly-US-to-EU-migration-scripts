@@ -88,7 +88,28 @@ root/
    - Create a mapping file at `data/mappings/maintainer_mapping.json`
    - Show a summary of mapped and unmapped members
 
-3. **Migrate Project to EU Instance**
+3. **(Optional) Estimate Migration Time**
+
+   Before running the migration, you can estimate how long it will take based on
+   your project's size and the API rate limits:
+
+   ```bash
+   deno task estimate -p SOURCE_PROJECT_KEY -d DESTINATION_PROJECT_KEY
+   ```
+
+   This will analyze your source project and provide:
+   - Total estimated migration time
+   - Resource breakdown (flags, segments, environments)
+   - Time breakdown by resource type
+
+   The estimate is based on the following rate limits:
+   - Flag operations (create/patch): 5 requests per 10 seconds
+   - Segment operations: No rate limit
+
+   Note: The actual migration time may vary due to network conditions and API
+   response times.
+
+4. **Migrate Project to EU Instance**
 
    Creates a new project in the target account or migrates resources into an
    existing project. If you want to preserve flag maintainers, use the `-m` flag
@@ -134,7 +155,8 @@ configured in `deno.json` and include all necessary permissions.
   "tasks": {
     "source": "deno run --allow-net --allow-read --allow-write src/scripts/source.ts",
     "map-members": "deno run --allow-net --allow-read --allow-write src/scripts/map_members.ts",
-    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts"
+    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts",
+    "estimate": "deno run --allow-net --allow-read --allow-write src/scripts/estimate_time.ts"
   }
 }
 ```
@@ -161,6 +183,13 @@ configured in `deno.json` and include all necessary permissions.
    - Creates flags, segments, and environments (if creating new project)
    - Can optionally map US maintainer IDs to EU maintainer IDs is the mapping
      was done (step 2) maintainers if mapping was done
+
+4. **estimate**: (Optional) Estimates the time needed for migration
+   - Analyzes source project to count resources
+   - Tests rate limits in target account
+   - Calculates estimated time based on resource counts and rate limits
+   - Shows detailed breakdown of the estimate
+   - Helps plan migration timing and resource allocation
 
 ### Task Permissions
 

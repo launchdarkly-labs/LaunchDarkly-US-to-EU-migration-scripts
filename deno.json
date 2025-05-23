@@ -12,6 +12,7 @@
     "source": "deno run --allow-net --allow-read --allow-write src/scripts/source.ts",
     "map-members": "deno run --allow-net --allow-read --allow-write src/scripts/map_members.ts",
     "update-maintainers": "deno run --allow-read --allow-write src/scripts/update_maintainers.ts",
-    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts"
+    "migrate": "deno run --allow-net --allow-read --allow-write src/scripts/migrate.ts",
+    "estimate": "deno run --allow-net --allow-read --allow-write src/scripts/estimate_time.ts"
   }
 }
